@@ -1,6 +1,8 @@
 #include <bits/stdc++.h>
 using namespace std;
 
+/* ---------------- PRODUCT STRUCT ---------------- */
+
 struct Product
 {
     int id;
@@ -10,97 +12,187 @@ struct Product
     Product* next;
 };
 
-Product* head=NULL;
+Product* head = NULL;
 
+/* ---------------- SIMPLE HASH TABLE ---------------- */
+// for beginner: direct indexing (assume id < 1000)
 
+Product* hashTable[1000] = {NULL};
 
-Product* create(int id, const char* name, float price, int qty)
+/* ---------------- SIMPLE STACK FOR UNDO ---------------- */
+
+struct Action
 {
-    Product* p=(Product*) malloc(sizeof(Product));
-    p->id=id;
+    char type[10]; // "ADD" or "DELETE"
+    Product data;
+};
+
+Action undoStackArr[100];
+int top = -1;
+
+/* ---------------- CREATE NODE ---------------- */
+
+Product* create(int id, char name[], float price, int qty)
+{
+    Product* p = new Product;
+
+    p->id = id;
     strcpy(p->name, name);
-    p->price=price;
-    p->qty=qty;
-    p->next=NULL;
+    p->price = price;
+    p->qty = qty;
+    p->next = NULL;
+
     return p;
 }
 
-void addProduct(int id, const char* name, float price, int qty)
-{
-    Product* p=create(id, name, price, qty);
+/* ---------------- PUSH TO STACK ---------------- */
 
-    if(head==NULL)
-    {
-        head=p;
-    }
+void push(Action a)
+{
+    undoStackArr[++top] = a;
+}
+
+/* ---------------- ADD PRODUCT ---------------- */
+
+void addProduct(int id, char name[], float price, int qty)
+{
+    Product* p = create(id, name, price, qty);
+
+    // linked list insert
+    if (head == NULL)
+        head = p;
     else
     {
-        Product* temp=head;
-        while(temp->next !=NULL)
-            temp=temp->next;
-        temp->next=p;
-    }
-    cout<<"Added!\n";
-}
-
-void showProducts()
-{
-    Product* temp=head;
-    if(!temp)
-    {
-        cout<<"No products\n";
-        return;
+        Product* temp = head;
+        while (temp->next != NULL)
+            temp = temp->next;
+        temp->next = p;
     }
 
-    while(temp)
-    {
-        cout<<"ID: "<<temp->id<<", Name: "<<temp->name
-            <<", Price: "<<temp->price
-            <<", Qty: "<<temp->qty<<endl;
-        temp=temp->next;
-    }
+    // hash table
+    hashTable[id] = p;
+
+    // store action for undo
+    Action a;
+    strcpy(a.type, "ADD");
+    a.data = *p;
+    push(a);
+
+    cout << "Added!\n";
 }
+
+/* ---------------- SEARCH (HASH TABLE) ---------------- */
 
 void searchProduct(int id)
 {
-    Product* temp=head;
-    while(temp)
+    if (hashTable[id] != NULL)
     {
-        if(temp->id==id)
-        {
-            cout<<"Found: "<<temp->name<<" Price: "<<temp->price<<endl;
-            return;
-        }
-        temp=temp->next;
+        cout << "Found: " << hashTable[id]->name << endl;
     }
-    cout<<"Not found\n";
+    else
+    {
+        cout << "Not found\n";
+    }
 }
+
+/* ---------------- DELETE PRODUCT ---------------- */
 
 void deleteProduct(int id)
 {
-    Product *temp=head, *prev=NULL;
+    Product *temp = head, *prev = NULL;
 
-    while(temp)
+    while (temp != NULL)
     {
-        if (temp->id==id)
+        if (temp->id == id)
         {
-            if (prev==NULL)
-            {
-                head=temp->next;
-            }
+            // save for undo
+            Action a;
+            strcpy(a.type, "DELETE");
+            a.data = *temp;
+            push(a);
+
+            hashTable[id] = NULL;
+
+            if (prev == NULL)
+                head = temp->next;
             else
-            {
-                prev->next=temp->next;
-            }
-            free(temp);
-            cout<<"Deleted\n";
+                prev->next = temp->next;
+
+            delete temp;
+
+            cout << "Deleted!\n";
             return;
         }
-        prev=temp;
-        temp=temp->next;
+
+        prev = temp;
+        temp = temp->next;
     }
-    cout<<"Not found\n";
+
+    cout << "Not found\n";
 }
+
+/* ---------------- SHOW PRODUCTS (SORTED SIMPLE) ---------------- */
+
+void showProducts()
+{
+    if (!head)
+    {
+        cout << "No products\n";
+        return;
+    }
+
+    // copy to array for sorting
+    Product* arr[100];
+    int n = 0;
+
+    Product* temp = head;
+    while (temp)
+    {
+        arr[n++] = temp;
+        temp = temp->next;
+    }
+
+    // simple bubble sort
+    for (int i = 0; i < n - 1; i++)
+        for (int j = 0; j < n - i - 1; j++)
+            if (arr[j]->id > arr[j + 1]->id)
+                swap(arr[j], arr[j + 1]);
+
+    // display
+    for (int i = 0; i < n; i++)
+    {
+        cout << "ID: " << arr[i]->id
+             << ", Name: " << arr[i]->name
+             << ", Price: " << arr[i]->price
+             << ", Qty: " << arr[i]->qty << endl;
+    }
+}
+
+/* ---------------- UNDO ---------------- */
+
+void undo()
+{
+    if (top == -1)
+    {
+        cout << "Nothing to undo\n";
+        return;
+    }
+
+    Action a = undoStackArr[top--];
+
+    if (strcmp(a.type, "ADD") == 0)
+    {
+        deleteProduct(a.data.id);
+    }
+    else if (strcmp(a.type, "DELETE") == 0)
+    {
+        addProduct(a.data.id, a.data.name, a.data.price, a.data.qty);
+    }
+
+    cout << "Undo done\n";
+}
+
+/* ---------------- MAIN ---------------- */
 
 int main()
 {
@@ -108,16 +200,16 @@ int main()
     float price;
     char name[30];
 
-    while(1)
+    while (1)
     {
-        cout<<"               Welcome To BUBT General Store\n1.Add\n2.Show\n3.Search\n4.Delete\n5.Exit\n";
-        cin>>choice;
+        cout << "                  Welcome to BUBT General Store\n1.Add\n2.Show\n3.Search\n4.Delete\n5.Undo\n6.Exit\n";
+        cin >> choice;
 
-        switch(choice)
+        switch (choice)
         {
         case 1:
-            cout<<"Enter id name price qty: ";
-            cin>>id>>name>>price>>qty;
+            cout << "Enter id name price qty: ";
+            cin >> id >> name >> price >> qty;
             addProduct(id, name, price, qty);
             break;
 
@@ -126,19 +218,23 @@ int main()
             break;
 
         case 3:
-            cout<<"Enter id: ";
-            cin>>id;
+            cout << "Enter id: ";
+            cin >> id;
             searchProduct(id);
             break;
 
         case 4:
-            cout<<"Enter id: ";
-            cin>>id;
+            cout << "Enter id: ";
+            cin >> id;
             deleteProduct(id);
             break;
 
         case 5:
-            exit(0);
+            undo();
+            break;
+
+        case 6:
+            return 0;
         }
     }
 }
