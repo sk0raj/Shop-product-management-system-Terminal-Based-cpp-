@@ -16,7 +16,7 @@ Product* hashTable[1000] = {NULL};
 
 struct Action
 {
-    char type[10]; // "ADD" or "DELETE"
+    char type[10];
     Product data;
 };
 
