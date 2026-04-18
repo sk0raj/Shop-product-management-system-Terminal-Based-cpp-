@@ -1,8 +1,6 @@
 #include <bits/stdc++.h>
 using namespace std;
 
-/* ---------------- PRODUCT STRUCT ---------------- */
-
 struct Product
 {
     int id;
@@ -14,12 +12,7 @@ struct Product
 
 Product* head = NULL;
 
-/* ---------------- SIMPLE HASH TABLE ---------------- */
-// for beginner: direct indexing (assume id < 1000)
-
 Product* hashTable[1000] = {NULL};
-
-/* ---------------- SIMPLE STACK FOR UNDO ---------------- */
 
 struct Action
 {
@@ -29,8 +22,6 @@ struct Action
 
 Action undoStackArr[100];
 int top = -1;
-
-/* ---------------- CREATE NODE ---------------- */
 
 Product* create(int id, char name[], float price, int qty)
 {
@@ -45,20 +36,15 @@ Product* create(int id, char name[], float price, int qty)
     return p;
 }
 
-/* ---------------- PUSH TO STACK ---------------- */
-
 void push(Action a)
 {
     undoStackArr[++top] = a;
 }
 
-/* ---------------- ADD PRODUCT ---------------- */
-
 void addProduct(int id, char name[], float price, int qty)
 {
     Product* p = create(id, name, price, qty);
 
-    // linked list insert
     if (head == NULL)
         head = p;
     else
@@ -69,10 +55,8 @@ void addProduct(int id, char name[], float price, int qty)
         temp->next = p;
     }
 
-    // hash table
     hashTable[id] = p;
 
-    // store action for undo
     Action a;
     strcpy(a.type, "ADD");
     a.data = *p;
@@ -80,8 +64,6 @@ void addProduct(int id, char name[], float price, int qty)
 
     cout << "Added!\n";
 }
-
-/* ---------------- SEARCH (HASH TABLE) ---------------- */
 
 void searchProduct(int id)
 {
@@ -95,8 +77,6 @@ void searchProduct(int id)
     }
 }
 
-/* ---------------- DELETE PRODUCT ---------------- */
-
 void deleteProduct(int id)
 {
     Product *temp = head, *prev = NULL;
@@ -105,7 +85,7 @@ void deleteProduct(int id)
     {
         if (temp->id == id)
         {
-            // save for undo
+
             Action a;
             strcpy(a.type, "DELETE");
             a.data = *temp;
@@ -131,8 +111,6 @@ void deleteProduct(int id)
     cout << "Not found\n";
 }
 
-/* ---------------- SHOW PRODUCTS (SORTED SIMPLE) ---------------- */
-
 void showProducts()
 {
     if (!head)
@@ -140,8 +118,6 @@ void showProducts()
         cout << "No products\n";
         return;
     }
-
-    // copy to array for sorting
     Product* arr[100];
     int n = 0;
 
@@ -151,14 +127,11 @@ void showProducts()
         arr[n++] = temp;
         temp = temp->next;
     }
-
-    // simple bubble sort
     for (int i = 0; i < n - 1; i++)
         for (int j = 0; j < n - i - 1; j++)
             if (arr[j]->id > arr[j + 1]->id)
                 swap(arr[j], arr[j + 1]);
 
-    // display
     for (int i = 0; i < n; i++)
     {
         cout << "ID: " << arr[i]->id
@@ -168,7 +141,6 @@ void showProducts()
     }
 }
 
-/* ---------------- UNDO ---------------- */
 
 void undo()
 {
@@ -192,8 +164,6 @@ void undo()
     cout << "Undo done\n";
 }
 
-/* ---------------- MAIN ---------------- */
-
 int main()
 {
     int choice, id, qty;
@@ -208,7 +178,7 @@ int main()
         switch (choice)
         {
         case 1:
-            cout << "Enter id name price qty: ";
+            cout << "Enter ID, name, price and quantity: ";
             cin >> id >> name >> price >> qty;
             addProduct(id, name, price, qty);
             break;
